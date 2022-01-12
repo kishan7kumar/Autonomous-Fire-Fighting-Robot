@@ -1,4 +1,4 @@
-
+//Note:- Smoke and temperature sensor are not used as the fire was small so couldn't get the minimum threshold for sensors to work. 
 
 // FOR SERIAL COMMUNICATION
 int s = 0;
@@ -20,11 +20,11 @@ const int in7 = 31; //negative of pump
 const int in8 = 29; // positive of pump
 
 // FOR DC MOTORS
-// defining my right 3 motors of first L298  driver
+// defining right 3 motors of first L298  driver
 const int in1 = 33; //blue       //in3
 const int in2 = 35; //grey      //in4
 int enB = 8;
-// defining my left 3 motors of second L298 driver
+// defining left 3 motors of second L298 driver
 const int in3 = 28; // in1
 const int in4 = 32; // in2
 int enA = 4;
@@ -37,7 +37,7 @@ const int in6 = 34; //in4   for fans
 int smokeA0 = A1;
 //int sensorThreshold = 200;
 
-// FOR FLAME SENSOR
+// FOR FLAME/INFRARED SENSOR
 int sensorPin = A0;	 // select the input pin for the LDR
 int sensorValue = 0; // variable to store the value coming from the flame sensor
 
@@ -54,7 +54,7 @@ const int echoPin = 42;
 long duration;
 int distance;
 
-// FOR ALARM LAMPS
+// FOR ALARM LED LIGHTS
 int ledc = 6;
 int ledd = 5;
 
@@ -82,44 +82,39 @@ void setup()
 	myservo.write(-90); // water nozzle goes up in search position
 }
 
-void loop() // all functions used ::::Warmup, Alarmon, Alarmoff, forward ,halt, Fanon, Fanoff, detectflame, detectsmoke, detectdistance, detecttemp, alarmlamp
+void loop() 
 {
-	// FIRE SEARCHING USING FIRE SENSOR LOGIC STARTS HERE
 again:
-	detectflame();
-	detectdistance();
-	left();
-
-	// FIRE CONFRIMATION USING MATLAB AND SENSORS LOGIC STARTS HERE
-	if (sensorValue <= 400) // if bot detects flame
+	left(); // rotating continuously on its place
+	detectflame(); // starts to detect flame
+	detectdistance(); // to avoid any obstacle
+	if (sensorValue <= 400) // if robot detects flame
 	{
-		forward(); // move towards flame
-		detectflame();
+		forward(); // move towards the flame source
+		detectflame(); // keep detecting flame
 		if (sensorValue <= 80) // if bot comes close enough to flame
 		{
-			halt();
+			halt(); // stop
 			delay(2000);
-			// READING MATLAB PROCESSING SERIAL
-			if (Serial.available())
+			if (Serial.available()) // read MATLAB serial data
 			{
 				s = Serial.read();
 				delay(3000);
-				if (s == 'F')
+				if (s == 'F') //if MATLAB confirms fire
 				{
 					myservo.write(90); // lower the water nozzle to fire water
 					delay(1000);
-					Fanon();
-					firehere();
+					Fanon(); //turn on fans to suck in smoke
+					firehere(); // sound the alarm
 					delay(2000);
 					Alarmoff();
 					Fanoff();
 				}
-
-				else // fire was not confirmed
+				else // if MATLAB not confirmes fire
 				{
-					back();
+					back(); // go back to starting location
 					delay(2000);
-					goto again;
+					goto again; //starts the searching process again
 				}
 			}
 		}
@@ -136,9 +131,9 @@ again:
 		delay(1000);
 	}
 
-} // loop fucntions closed here
+} 
 
-// ALL FUNCTIONS DEFINED HERE
+// ************************* ALL FUNCTIONS DEFINED HERE
 void detectsmoke()
 {
 	int analogSensor = analogRead(smokeA0);
@@ -155,8 +150,6 @@ void detectflame()
 
 void Alarmon()
 {
-	//     tone(buzzer, 1000);
-	//     delay(200);
 	digitalWrite(ledc, HIGH);
 	delay(50);
 	digitalWrite(ledc, LOW);
@@ -166,19 +159,13 @@ void Alarmon()
 
 void Alarmoff()
 {
-	//      noTone(buzzer);
-	//       //delay(500);
-	//       digitalWrite(ledc, LOW);
-	//       digitalWrite(ledd, LOW);
-
 	digitalWrite(ledd, HIGH); // turn the LED on (HIGH is the voltage level)
-	delay(50);				  // wait for a second
+	delay(50);				 
 	digitalWrite(ledd, LOW);
 	noTone(buzzer);
 }
 
 void forward()
-
 {
 	analogWrite(enA, 180); // Range 100rpm to 255rpm only
 	analogWrite(enB, 180);
@@ -189,7 +176,6 @@ void forward()
 }
 
 void back()
-
 {
 	analogWrite(enA, 180); // Range 100rpm to 255rpm only
 	analogWrite(enB, 180);
@@ -211,7 +197,6 @@ void left()
 
 void right()
 {
-
 	analogWrite(enA, 180); // Range 100rpm to 255rpm only
 	analogWrite(enB, 180);
 	digitalWrite(in1, LOW);
@@ -244,22 +229,12 @@ void Fanoff()
 
 void Warmup()
 {
-
 	Alarmon();
 	digitalWrite(ledc, HIGH);
 	digitalWrite(ledd, HIGH);
 	delay(100);
 	digitalWrite(ledc, LOW);
 	digitalWrite(ledd, LOW);
-	delay(100);
-	digitalWrite(ledc, HIGH);
-	digitalWrite(ledd, HIGH);
-	delay(100);
-	digitalWrite(ledc, LOW);
-	digitalWrite(ledd, LOW);
-	delay(100);
-	digitalWrite(ledc, HIGH);
-	digitalWrite(ledd, HIGH);
 	delay(100);
 	digitalWrite(ledc, LOW);
 	digitalWrite(ledd, LOW);
@@ -281,7 +256,6 @@ void Warmup()
 
 void detectdistance()
 {
-
 	digitalWrite(trigPin, LOW);
 	delayMicroseconds(10);
 	digitalWrite(trigPin, HIGH);
